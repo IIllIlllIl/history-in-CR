@@ -48,6 +48,15 @@ class Data:
             rt.append(temp_rt_row)
         return rt
 
+    def acceptance(self):
+        acc = []
+        for p in self.participants:
+            temp_rt_row = []
+            for ans in p.answers:
+                temp_rt_row.append(ans["accept"])
+            acc.append(temp_rt_row)
+        return acc
+
 
 class Analysis:
     def __init__(self, data):
@@ -179,9 +188,31 @@ class Analysis:
             print(f"average: {sum(c_vec) / len(c_vec):.4f}, cnt: {len(c_vec)}")
 
 
+class Streaks:
+    def __init__(self, data):
+        self.data = data
+        # print(data)
+
+    def display(self):
+        for row in self.data:
+            print(row)
+
+    def phi_contingency(self):
+        for row in self.data:
+            temp_matrix = [[0 for _ in range(2)] for _ in range(2)]
+            print(row)
+
+
 # run analysis
-a = Analysis(Data("full_info.csv").response_time())
+dt = Data("full_info.csv")
+a = Analysis(dt.response_time())
+
 # trend
-a.slt_decomposition()
+# a.slt_decomposition()
+
 # linear model
-a.ols_regression()
+# a.ols_regression()
+
+# phi
+st = Streaks(dt.acceptance())
+st.phi_contingency()
