@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 class Data:
     def __init__(self, path):
-        self.rd = reader.CsvReader(path).extract_raw_data()
+        self.rd = reader.CsvReader(path).extract_raw_data("tasks.csv")
         self.participants = []
         # offset task difficulty and gender bias
         average = self.rd.average()
@@ -26,14 +26,14 @@ class Data:
                 if ave_rt > -1:
                     self.participants[-1].add_answer(ans["time"] / ave_rt, round(ans["accept"]), task_id)
 
-    def check_normality(self, alpha = 0.05):
-        rt_list = self.rd.summary()["response_time"]
-        for i in range(180):
-            if len(rt_list[i]) > 3:
-                stat, p = stats.shapiro(rt_list[i])
-                print(str(i) + f": p value: {p:.4f}", "-> yes" if p > alpha else "-> no")
-            else:
-                print(str(i) + ": Data must be at least length 3.")
+    # def check_normality(self, alpha=0.05):
+    #     rt_list = self.rd.summary()["response_time"]
+    #     for i in range(120):
+    #         if len(rt_list[i]) > 3:
+    #             stat, p = stats.shapiro(rt_list[i])
+    #             print(str(i) + f": p value: {p:.4f}", "-> yes" if p > alpha else "-> no")
+    #         else:
+    #             print(str(i) + ": Data must be at least length 3.")
 
     def display(self):
         for p in self.participants:
@@ -164,13 +164,17 @@ class Analysis:
 
     def ols_regression(self, window_size=6):
         coef_buffer = [[] for _ in range(window_size + 3)]
+        pid_buffer = [[] for _ in range(window_size + 3)]
         for pid in range(len(self.eff)):
             coef, p_value = self.get_ols_result(pid, window_size)
             for i in range(window_size + 3):
                 if p_value[i] < 0.05:
                     coef_buffer[i].append(coef[i])
+                    pid_buffer[i].append(pid)
         for c_vec in coef_buffer:
             print(c_vec)
+        for p_vec in pid_buffer:
+            print(p_vec)
         for c_vec in coef_buffer:
             print(f"average: {sum(c_vec) / len(c_vec):.4f}, cnt: {len(c_vec)}")
 
@@ -178,6 +182,6 @@ class Analysis:
 # run analysis
 a = Analysis(Data("full_info.csv").response_time())
 # trend
-# a.slt_decomposition()
+a.slt_decomposition()
 # linear model
 a.ols_regression()
