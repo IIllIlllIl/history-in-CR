@@ -12,3 +12,10 @@ a.display()
 a.pelt_check_point()
 a.slt_decomposition()
 a.get_history_pars(0)
+
+# test streaks
+st = data.Streaks(dt.acceptance())
+st.phi_contingency()
+
+arr = [1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1]
+print(st.get_matrix(arr))

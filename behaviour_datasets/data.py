@@ -199,8 +199,76 @@ class Streaks:
 
     def phi_contingency(self):
         for row in self.data:
-            temp_matrix = [[0 for _ in range(2)] for _ in range(2)]
             print(row)
+            matrix = np.array(self.get_matrix(row))
+            print(matrix)
+            chi2, p, dof, expected = stats.chi2_contingency(matrix)
+            n = matrix.sum()
+            phi = np.sqrt(chi2 / n)
+            print("phi: " + str(phi) + "\tp: " + str(p))
+
+    @staticmethod
+    def get_matrix(row):
+        # i + 1\i  0   1
+        #   1      01  11
+        #   0      00  10
+        temp_matrix = [[0 for _ in range(2)] for _ in range(2)]
+        for i in range(len(row) - 1):
+            if row[i] == 0:
+                if row[i + 1] == 0:
+                    temp_matrix[1][0] += 1
+                elif row[i + 1] == 1:
+                    temp_matrix[0][0] += 1
+            elif row[i] == 1:
+                if row[i + 1] == 0:
+                    temp_matrix[1][1] += 1
+                elif row[i + 1] == 1:
+                    temp_matrix[0][1] += 1
+        return temp_matrix
+
+    def one_way_anova(self):
+        for row in self.data:
+            print(row)
+            matrix = self.get_history_2(row)
+            print(matrix)
+            group00 = np.array(matrix[0])
+            group01 = np.array(matrix[1])
+            group10 = np.array(matrix[2])
+            group11 = np.array(matrix[3])
+            f_stat, p_value = stats.f_oneway(group00, group01, group10, group11)
+            print(f"F统计量 = {f_stat:.4f}")
+            print(f"P值 = {p_value:.4f}")
+
+    @staticmethod
+    def get_history_2(row):
+        # i + 2\i, i + 1  00  01  10  11
+        #   1             001 011 101 111
+        #   0             000 010 100 110
+        temp_matrix = [[0 for _ in range(2)] for _ in range(4)]
+        for i in range(len(row) - 2):
+            if row[i] == 0:
+                if row[i + 1] == 0:
+                    if row[i + 2] == 0:
+                        temp_matrix[0][1] += 1
+                    elif row[i + 2] == 1:
+                        temp_matrix[0][0] += 1
+                elif row[i + 1] == 1:
+                    if row[i + 2] == 0:
+                        temp_matrix[1][1] += 1
+                    elif row[i + 2] == 1:
+                        temp_matrix[1][0] += 1
+            elif row[i] == 1:
+                if row[i + 1] == 0:
+                    if row[i + 2] == 0:
+                        temp_matrix[2][1] += 1
+                    elif row[i + 2] == 1:
+                        temp_matrix[2][0] += 1
+                elif row[i + 1] == 1:
+                    if row[i + 2] == 0:
+                        temp_matrix[3][1] += 1
+                    elif row[i + 2] == 1:
+                        temp_matrix[3][0] += 1
+        return temp_matrix
 
 
 # run analysis
@@ -215,4 +283,7 @@ a = Analysis(dt.response_time())
 
 # phi
 st = Streaks(dt.acceptance())
-st.phi_contingency()
+# st.phi_contingency()
+
+# anova
+st.one_way_anova()
