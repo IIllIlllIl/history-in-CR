@@ -301,26 +301,26 @@ class Streaks:
         phi = np.sqrt(chi2 / n)
         print("phi: " + str(phi) + "\tp: " + str(p))
 
-    def phi_contingency_each(self):
-        max_phi = 0
-        max_p = 0
-        min_phi = 10
-        min_p = 1
-        for row in self.data:
-            # print(row)
-            matrix = np.array(self.get_matrix(row))
-            # print(matrix)
-            chi2, p, dof, expected = stats.chi2_contingency(matrix)
-            n = matrix.sum()
-            phi = np.sqrt(chi2 / n)
-            max_p = max(max_p, p)
-            min_p = min(min_p, p)
-            max_phi = max(max_phi, phi)
-            min_phi = min(min_phi, phi)
-            if p < 0.05:
-                print("* phi: " + str(phi) + "\tp: " + str(p))
-        print(f"phi: {min_phi:.4f}, {max_phi:.4f}")
-        print(f"p: {min_p:.4f}, {max_p:.4f}")
+    # def phi_contingency_each(self):
+    #     max_phi = 0
+    #     max_p = 0
+    #     min_phi = 10
+    #     min_p = 1
+    #     for row in self.data:
+    #         # print(row)
+    #         matrix = np.array(self.get_matrix(row))
+    #         # print(matrix)
+    #         chi2, p, dof, expected = stats.chi2_contingency(matrix)
+    #         n = matrix.sum()
+    #         phi = np.sqrt(chi2 / n)
+    #         max_p = max(max_p, p)
+    #         min_p = min(min_p, p)
+    #         max_phi = max(max_phi, phi)
+    #         min_phi = min(min_phi, phi)
+    #         if p < 0.05:
+    #             print("* phi: " + str(phi) + "\tp: " + str(p))
+    #     print(f"phi: {min_phi:.4f}, {max_phi:.4f}")
+    #     print(f"p: {min_p:.4f}, {max_p:.4f}")
 
     @staticmethod
     def get_matrix_2(row):
@@ -368,6 +368,40 @@ class Streaks:
         print(f"F统计量 = {f_stat:.4f}")
         print(f"P值 = {p_value:.4f}")
 
+    def two_previous_chi2(self):
+        matrix = np.zeros((9, 3))
+        for row in self.data:
+            # print(row)
+            temp_matrix = self.get_matrix_2(row)
+            matrix += temp_matrix
+        print(matrix)
+        chi2, p, dof, expected = stats.chi2_contingency(matrix)
+        n = matrix.sum()
+        phi = np.sqrt(chi2 / n)
+        print(f"phi: {phi:.4f}")
+        print(f"p: {p}")
+
+    # def two_previous_chi2_each(self):
+    #     max_phi = 0
+    #     max_p = 0
+    #     min_phi = 10
+    #     min_p = 1
+    #     for row in self.data:
+    #         # print(row)
+    #         matrix = np.array(self.get_matrix_2(row))
+    #         print(matrix)
+    #         chi2, p, dof, expected = stats.chi2_contingency(matrix)
+    #         n = matrix.sum()
+    #         phi = np.sqrt(chi2 / n)
+    #         max_p = max(max_p, p)
+    #         min_p = min(min_p, p)
+    #         max_phi = max(max_phi, phi)
+    #         min_phi = min(min_phi, phi)
+    #         if p < 0.05:
+    #             print("* phi: " + str(phi) + "\tp: " + str(p))
+    #     print(f"phi: {min_phi:.4f}, {max_phi:.4f}")
+    #     print(f"p: {min_p:.4f}, {max_p:.4f}")
+
 
 # run analysis
 dt = Data("full_info.csv")
@@ -382,9 +416,11 @@ st = Streaks(dt.acceptance())
 # a.entire_ols_result()
 
 # anova
-# st.phi_contingency()
-# st.phi_contingency_each()
-st.one_previous_anova()
+# st.one_previous_anova()
 # st.one_previous_anova_each()
 # st.two_previous_anova()
 # st.two_previous_anova_each()
+
+# chi2
+# st.phi_contingency()
+# st.two_previous_chi2()
