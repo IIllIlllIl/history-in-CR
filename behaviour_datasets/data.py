@@ -187,6 +187,44 @@ class Analysis:
         for c_vec in coef_buffer:
             print(f"average: {sum(c_vec) / len(c_vec):.4f}, cnt: {len(c_vec)}")
 
+    def entire_ols_result(self, window_size=6):
+        # generate X & y
+        t_list = []
+        pre_list = []
+        his_list = []
+        str_list = []
+        y_list = []
+        # sum up
+        for pid in range(len(self.eff)):
+            eff, p_eff, l_eff, s = self.get_history_pars(pid, window_size)
+            t = range(len(eff))
+            t_list += t
+            # differentiate streak
+            streak = []
+            for cnt in s:
+                temp_s = []
+                for i in range(window_size):
+                    if i == cnt:
+                        temp_s.append(1)
+                    else:
+                        temp_s.append(0)
+                streak.append(temp_s)
+            y_list += eff
+            pre_list += p_eff
+            his_list += l_eff
+            str_list += streak
+        x_vec = np.column_stack((t_list, pre_list, his_list, str_list))
+        x_vec = sm.add_constant(x_vec)
+        # ols
+        model = sm.OLS(np.array(y_list), x_vec)
+        results = model.fit()
+        # output
+        coefficients = results.params[1:]
+        p_values = results.pvalues[1:]
+        for coef, p in zip(coefficients, p_values):
+            print(f"coef: , {coef:.5f}, \tp_value:  , {p:.6f}")
+        return [coefficients, p_values]
+
 
 class Streaks:
     def __init__(self, data):
@@ -197,93 +235,156 @@ class Streaks:
         for row in self.data:
             print(row)
 
-    def phi_contingency(self):
+    @staticmethod
+    def get_matrix(row):
+        # i\i + 1  0   1   2
+        #   0      00  10  20
+        #   1      01  11  21
+        #   2      02  12  22
+        temp_matrix = [[0 for _ in range(3)] for _ in range(3)]
+        for i in range(len(row) - 1):
+            temp_matrix[row[i]][row[i + 1]] += 1
+        return temp_matrix
+
+    # def one_way_anova(self):
+    #     for row in self.data:
+    #         print(row)
+    #         matrix = self.get_history_2(row)
+    #         print(matrix)
+    #         group00 = np.array(matrix[0])
+    #         group01 = np.array(matrix[1])
+    #         group10 = np.array(matrix[2])
+    #         group11 = np.array(matrix[3])
+    #         f_stat, p_value = stats.f_oneway(group00, group01, group10, group11)
+    #         print(f"F统计量 = {f_stat:.4f}")
+    #         print(f"P值 = {p_value:.4f}")
+
+    def one_previous_anova_each(self):
+        max_p = 0
+        min_p = 1
         for row in self.data:
-            print(row)
+            # print(row)
+            matrix = self.get_matrix(row)
+            # print(matrix)
+            group0 = np.array(matrix[0])
+            group1 = np.array(matrix[1])
+            group2 = np.array(matrix[2])
+            f_stat, p_value = stats.f_oneway(group0, group1, group2)
+            max_p = max(max_p, p_value)
+            min_p = min(min_p, p_value)
+            print(f"F统计量 = {f_stat:.4f}")
+            print(f"P值 = {p_value:.4f}")
+        print(f"{min_p:.4f} - {max_p:.4f}")
+
+    def one_previous_anova(self):
+        matrix = np.zeros((3, 3))
+        for row in self.data:
+            temp_matrix = np.array(self.get_matrix(row))
+            matrix += temp_matrix
+        print(matrix)
+        group0 = np.array(matrix[0, :])
+        group1 = np.array(matrix[1, :])
+        group2 = np.array(matrix[2, :])
+        f_stat, p_value = stats.f_oneway(group0, group1, group2)
+        print(f"F统计量 = {f_stat:.4f}")
+        print(f"P值 = {p_value:.4f}")
+
+    def phi_contingency(self):
+        matrix = np.zeros((3, 3))
+        for row in self.data:
+            # print(row)
+            temp_matrix = np.array(self.get_matrix(row))
+            matrix += temp_matrix
+        print(matrix)
+        chi2, p, dof, expected = stats.chi2_contingency(matrix)
+        n = matrix.sum()
+        phi = np.sqrt(chi2 / n)
+        print("phi: " + str(phi) + "\tp: " + str(p))
+
+    def phi_contingency_each(self):
+        max_phi = 0
+        max_p = 0
+        min_phi = 10
+        min_p = 1
+        for row in self.data:
+            # print(row)
             matrix = np.array(self.get_matrix(row))
-            print(matrix)
+            # print(matrix)
             chi2, p, dof, expected = stats.chi2_contingency(matrix)
             n = matrix.sum()
             phi = np.sqrt(chi2 / n)
-            print("phi: " + str(phi) + "\tp: " + str(p))
+            max_p = max(max_p, p)
+            min_p = min(min_p, p)
+            max_phi = max(max_phi, phi)
+            min_phi = min(min_phi, phi)
+            if p < 0.05:
+                print("* phi: " + str(phi) + "\tp: " + str(p))
+        print(f"phi: {min_phi:.4f}, {max_phi:.4f}")
+        print(f"p: {min_p:.4f}, {max_p:.4f}")
 
     @staticmethod
-    def get_matrix(row):
-        # i + 1\i  0   1
-        #   1      01  11
-        #   0      00  10
-        temp_matrix = [[0 for _ in range(2)] for _ in range(2)]
-        for i in range(len(row) - 1):
-            if row[i] == 0:
-                if row[i + 1] == 0:
-                    temp_matrix[1][0] += 1
-                elif row[i + 1] == 1:
-                    temp_matrix[0][0] += 1
-            elif row[i] == 1:
-                if row[i + 1] == 0:
-                    temp_matrix[1][1] += 1
-                elif row[i + 1] == 1:
-                    temp_matrix[0][1] += 1
-        return temp_matrix
-
-    def one_way_anova(self):
-        for row in self.data:
-            print(row)
-            matrix = self.get_history_2(row)
-            print(matrix)
-            group00 = np.array(matrix[0])
-            group01 = np.array(matrix[1])
-            group10 = np.array(matrix[2])
-            group11 = np.array(matrix[3])
-            f_stat, p_value = stats.f_oneway(group00, group01, group10, group11)
-            print(f"F统计量 = {f_stat:.4f}")
-            print(f"P值 = {p_value:.4f}")
-
-    @staticmethod
-    def get_history_2(row):
-        # i + 2\i, i + 1  00  01  10  11
-        #   1             001 011 101 111
-        #   0             000 010 100 110
-        temp_matrix = [[0 for _ in range(2)] for _ in range(4)]
+    def get_matrix_2(row):
+        temp_matrix = [[0 for _ in range(3)] for _ in range(9)]
         for i in range(len(row) - 2):
-            if row[i] == 0:
-                if row[i + 1] == 0:
-                    if row[i + 2] == 0:
-                        temp_matrix[0][1] += 1
-                    elif row[i + 2] == 1:
-                        temp_matrix[0][0] += 1
-                elif row[i + 1] == 1:
-                    if row[i + 2] == 0:
-                        temp_matrix[1][1] += 1
-                    elif row[i + 2] == 1:
-                        temp_matrix[1][0] += 1
-            elif row[i] == 1:
-                if row[i + 1] == 0:
-                    if row[i + 2] == 0:
-                        temp_matrix[2][1] += 1
-                    elif row[i + 2] == 1:
-                        temp_matrix[2][0] += 1
-                elif row[i + 1] == 1:
-                    if row[i + 2] == 0:
-                        temp_matrix[3][1] += 1
-                    elif row[i + 2] == 1:
-                        temp_matrix[3][0] += 1
+            temp_matrix[row[i] * 3 + row[i + 1]][row[i + 2]] += 1
         return temp_matrix
+
+    def two_previous_anova_each(self):
+        max_f = 0
+        max_p = 0
+        min_f = 10
+        min_p = 1
+        for row in self.data:
+            # print(row)
+            matrix = self.get_matrix_2(row)
+            # print(matrix)
+            group = []
+            for i in range(9):
+                group.append(np.array(matrix[i]))
+            f_stat, p_value = stats.f_oneway(group[0], group[1], group[2], group[3], group[4],
+                                             group[5], group[6], group[7], group[8])
+            max_p = max(max_p, p_value)
+            min_p = min(min_p, p_value)
+            max_f = max(max_f, f_stat)
+            min_f = min(min_f, f_stat)
+            if p_value <= 0.05:
+                print(f"F统计量 = {f_stat:.4f}")
+                print(f"P值 = {p_value:.4f}")
+        print(f"f: {min_f:.4f}, {max_f:.4f}")
+        print(f"p: {min_p:.4f}, {max_p:.4f}")
+
+    def two_previous_anova(self):
+        matrix = np.zeros((9, 3))
+        for row in self.data:
+            # print(row)
+            temp_matrix = self.get_matrix_2(row)
+            matrix += temp_matrix
+        print(matrix)
+        group = []
+        for i in range(9):
+            group.append(np.array(matrix[i]))
+        f_stat, p_value = stats.f_oneway(group[0], group[1], group[2], group[3], group[4],
+                                         group[5], group[6], group[7], group[8])
+        print(f"F统计量 = {f_stat:.4f}")
+        print(f"P值 = {p_value:.4f}")
 
 
 # run analysis
 dt = Data("full_info.csv")
 a = Analysis(dt.response_time())
+st = Streaks(dt.acceptance())
 
 # trend
 # a.slt_decomposition()
 
 # linear model
 # a.ols_regression()
-
-# phi
-st = Streaks(dt.acceptance())
-# st.phi_contingency()
+# a.entire_ols_result()
 
 # anova
-st.one_way_anova()
+# st.phi_contingency()
+# st.phi_contingency_each()
+st.one_previous_anova()
+# st.one_previous_anova_each()
+# st.two_previous_anova()
+# st.two_previous_anova_each()

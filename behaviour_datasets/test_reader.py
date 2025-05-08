@@ -10,7 +10,6 @@ print(tm.get_task_id(19, 2))
 
 # test csv reader with task mapping
 cr = reader.CsvReader("full_info.csv")
-# cr.remove_na_row()
 rw = cr.extract_raw_data("tasks.csv")
 rw.display()
 

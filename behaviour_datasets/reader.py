@@ -16,8 +16,10 @@ class CsvReader:
     def remove_na_row(self):
         na_list = []
         for row in self.selected_data:
-            if "NA" in row.values() or 'N/A' in row.values():
+            if 'N/A' in row.values():
                 na_list.append(row)
+            elif "NA" in row.values():
+                row["RES_DURATION"] = 30000.0
         for row in na_list:
             self.selected_data.remove(row)
         # print(self.selected_data)
@@ -37,8 +39,10 @@ class CsvReader:
             # digitalizing acceptance
             if row["RES_HAND"] == "L":
                 acc = 1
-            else:
+            elif row["RES_HAND"] == "R":
                 acc = 0
+            else:
+                acc = 2
             # digitalizing task id
             tm = TaskMapping(task_path)
             task_id = tm.get_task_id(int(row["PNG_NAME"].split(".")[0]), int(row["VERSION"]))
