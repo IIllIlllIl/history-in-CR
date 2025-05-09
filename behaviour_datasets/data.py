@@ -402,6 +402,71 @@ class Streaks:
     #     print(f"phi: {min_phi:.4f}, {max_phi:.4f}")
     #     print(f"p: {min_p:.4f}, {max_p:.4f}")
 
+    def get_history_pars(self, pid, window_size=6):
+        participant = self.data[pid]
+        if len(participant) < window_size:
+            return [[], [], [], []]
+        # history pars
+        previous = []
+        longer = []
+        streak = []
+        for i in range(window_size - 1, len(participant)):
+            previous.append(participant[i - 1])
+            longer.append(participant[i-window_size+1:i-1].count(1))
+            temp_streak = 0
+            his_eff = participant[i-window_size+1:i]
+            his_eff.reverse()
+            for his in his_eff:
+                if his == 1:
+                    temp_streak += 1
+                else:
+                    break
+            streak.append(temp_streak)
+        return [participant[window_size - 1:], previous, longer, streak]
+
+    def entire_ols_result(self, window_size=6):
+        # generate X & y
+        t_list = []
+        pre_list = []
+        his_list = []
+        str_list = []
+        y_list = []
+        # sum up
+        for pid in range(len(self.data)):
+            eff, p_eff, l_eff, s = self.get_history_pars(pid, window_size)
+            t = range(len(eff))
+            t_list += t
+            # differentiate streak
+            streak = []
+            for cnt in s:
+                temp_s = []
+                for i in range(window_size):
+                    if i == cnt:
+                        temp_s.append(1)
+                    else:
+                        temp_s.append(0)
+                streak.append(temp_s)
+            # print(self.data[pid])
+            # print(eff)
+            # print(p_eff)
+            # print(l_eff)
+            # print(streak)
+            y_list += eff
+            pre_list += p_eff
+            his_list += l_eff
+            str_list += streak
+        x_vec = np.column_stack((t_list, pre_list, his_list, str_list))
+        x_vec = sm.add_constant(x_vec)
+        # ols
+        model = sm.OLS(np.array(y_list), x_vec)
+        results = model.fit()
+        # output
+        coefficients = results.params[1:]
+        p_values = results.pvalues[1:]
+        for coef, p in zip(coefficients, p_values):
+            print(f"coef: , {coef:.5f}, \tp_value:  , {p:.6f}")
+        return [coefficients, p_values]
+
 
 # run analysis
 dt = Data("full_info.csv")
@@ -424,3 +489,6 @@ st = Streaks(dt.acceptance())
 # chi2
 # st.phi_contingency()
 # st.two_previous_chi2()
+
+# OLS streak
+st.entire_ols_result()
