@@ -289,6 +289,23 @@ class Streaks:
         print(f"F统计量 = {f_stat:.4f}")
         print(f"P值 = {p_value:.4f}")
 
+    @staticmethod
+    def adjusted_residual(observed, expected):
+        row_sums = observed.sum(axis=1)
+        col_sums = observed.sum(axis=0)
+        total = observed.sum()
+        row_proportions = row_sums / total
+        col_proportions = col_sums / total
+        adjusted_residuals = np.zeros_like(observed, dtype=float)
+        for i in range(observed.shape[0]):
+            for j in range(observed.shape[1]):
+                e = expected[i, j]
+                # 调整残差分母
+                denominator = np.sqrt(e * (1 - row_proportions[i]) * (1 - col_proportions[j]))
+                # 调整残差
+                adjusted_residuals[i, j] = (observed[i, j] - e) / denominator
+        print(np.round(adjusted_residuals, 2))
+
     def phi_contingency(self):
         matrix = np.zeros((3, 3))
         for row in self.data:
@@ -300,6 +317,7 @@ class Streaks:
         n = matrix.sum()
         phi = np.sqrt(chi2 / n)
         print("phi: " + str(phi) + "\tp: " + str(p))
+        self.adjusted_residual(matrix, expected)
 
     # def phi_contingency_each(self):
     #     max_phi = 0
@@ -380,6 +398,7 @@ class Streaks:
         phi = np.sqrt(chi2 / n)
         print(f"phi: {phi:.4f}")
         print(f"p: {p}")
+        self.adjusted_residual(matrix, expected)
 
     # def two_previous_chi2_each(self):
     #     max_phi = 0
@@ -487,8 +506,8 @@ st = Streaks(dt.acceptance())
 # st.two_previous_anova_each()
 
 # chi2
-# st.phi_contingency()
-# st.two_previous_chi2()
+st.phi_contingency()
+st.two_previous_chi2()
 
 # OLS streak
-st.entire_ols_result()
+# st.entire_ols_result()
