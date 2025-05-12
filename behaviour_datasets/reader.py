@@ -14,13 +14,13 @@ class CsvReader:
                 self.selected_data.append(selected_row)
             # print(self.selected_data)
 
-    def remove_na_row(self):
-        na_list = []
+    def remove_na_row(self, remove=True, threshold=15, plot=False):
+        remove_list = []
         na_pid = {}
         na_cnt = 0
         for row in self.selected_data:
             if 'N/A' in row.values():
-                na_list.append(row)
+                remove_list.append(row)
             elif "NA" in row.values():
                 if row["PID"] in na_pid.keys():
                     na_pid[row["PID"]] += 1
@@ -28,14 +28,26 @@ class CsvReader:
                     na_pid[row["PID"]] = 1
                 na_cnt += 1
                 row["RES_DURATION"] = 30000.0
-        for row in na_list:
+        # remove participants with NA not less than threshold
+        if remove:
+            pid_list = []
+            for [k, v] in na_pid.items():
+                if v >= threshold:
+                    pid_list.append(k)
+            print(pid_list)
+            for row in self.selected_data:
+                if row["PID"] in pid_list and 'N/A' not in row.values():
+                    remove_list.append(row)
+        for row in remove_list:
             self.selected_data.remove(row)
+        # plot NA of each participant
         # print(self.selected_data)
-        cnt = [0 for _ in range(9)]
-        for [k, v] in na_pid.items():
-            # print(f"{k}: {v}")
-            cnt[int(v/5)] += 1
-        self.na_plot(cnt)
+        if plot:
+            cnt = [0 for _ in range(9)]
+            for [k, v] in na_pid.items():
+                print(f"{k}: {v}")
+                cnt[int(v/5)] += 1
+            self.na_plot(cnt)
 
     @staticmethod
     def na_plot(data):
