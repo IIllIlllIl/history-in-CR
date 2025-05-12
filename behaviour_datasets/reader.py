@@ -1,4 +1,5 @@
 import csv
+import matplotlib.pyplot as plt
 
 
 # reading csv data
@@ -15,14 +16,49 @@ class CsvReader:
 
     def remove_na_row(self):
         na_list = []
+        na_pid = {}
+        na_cnt = 0
         for row in self.selected_data:
             if 'N/A' in row.values():
                 na_list.append(row)
             elif "NA" in row.values():
+                if row["PID"] in na_pid.keys():
+                    na_pid[row["PID"]] += 1
+                else:
+                    na_pid[row["PID"]] = 1
+                na_cnt += 1
                 row["RES_DURATION"] = 30000.0
         for row in na_list:
             self.selected_data.remove(row)
         # print(self.selected_data)
+        cnt = [0 for _ in range(9)]
+        for [k, v] in na_pid.items():
+            # print(f"{k}: {v}")
+            cnt[int(v/5)] += 1
+        self.na_plot(cnt)
+
+    @staticmethod
+    def na_plot(data):
+        x_labels = [f"[{i * 5}, {i* 5 + 5})" for i in range(len(data))]
+        plt.figure(figsize=(10, 6))  # 设置图表大小（可选）
+        bars = plt.bar(x_labels, data, color='skyblue', edgecolor='black')
+        for bar in bars:
+            height = bar.get_height()
+            plt.text(
+                bar.get_x() + bar.get_width() / 2,
+                height + 0.1,
+                f'{int(height)}',
+                ha='center',
+                va='bottom'
+            )
+        plt.title("time out frequency of each participant", fontsize=14)
+        plt.xlabel("Categories", fontsize=12)
+        plt.ylabel("Values", fontsize=12)
+        plt.xticks(rotation=45)  # 旋转x轴标签避免重叠
+        plt.grid(axis='y', linestyle='--', alpha=0.7)  # 添加横向网格线
+        plt.tight_layout()  # 自动调整布局
+        plt.savefig("result/pid_na.png")
+        # plt.show()
 
     # change selected data to raw data
     def extract_raw_data(self, task_path):
