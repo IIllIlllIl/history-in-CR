@@ -426,45 +426,73 @@ class Streaks:
         if len(participant) < window_size:
             return [[], [], [], []]
         # history pars
+        efficiency = []
         previous = []
         longer = []
-        streak = []
+        streak_1 = []
+        streak_0 = []
+        task = []
         for i in range(window_size - 1, len(participant)):
+            if participant[i] == 2:
+                continue
+            efficiency.append(participant[i])
             previous.append(participant[i - 1])
             longer.append(participant[i-window_size+1:i-1].count(1))
-            temp_streak = 0
+            task.append(i)
+            # streaks with refusing
+            temp_streak_0 = 0
+            his_eff = participant[i-window_size+1:i]
+            his_eff.reverse()
+            for his in his_eff:
+                if his == 0:
+                    temp_streak_0 += 1
+                else:
+                    break
+            streak_0.append(temp_streak_0)
+            # streaks with accepting
+            temp_streak_1 = 0
             his_eff = participant[i-window_size+1:i]
             his_eff.reverse()
             for his in his_eff:
                 if his == 1:
-                    temp_streak += 1
+                    temp_streak_1 += 1
                 else:
                     break
-            streak.append(temp_streak)
-        return [participant[window_size - 1:], previous, longer, streak]
+            streak_1.append(temp_streak_1)
+        return [efficiency, previous, longer, streak_1, streak_0, task]
 
     def entire_ols_result(self, window_size=6):
         # generate X & y
         t_list = []
         pre_list = []
         his_list = []
-        str_list = []
+        str_1_list = []
+        str_0_list = []
         y_list = []
         # sum up
         for pid in range(len(self.data)):
-            eff, p_eff, l_eff, s = self.get_history_pars(pid, window_size)
-            t = range(len(eff))
+            eff, p_eff, l_eff, s1, s0, t = self.get_history_pars(pid, window_size)
             t_list += t
-            # differentiate streak
-            streak = []
-            for cnt in s:
+            # differentiate streak for rejecting
+            streak_0 = []
+            for cnt in s1:
                 temp_s = []
                 for i in range(window_size):
                     if i == cnt:
                         temp_s.append(1)
                     else:
                         temp_s.append(0)
-                streak.append(temp_s)
+                streak_0.append(temp_s)
+            # differentiate streak for accepting
+            streak_1 = []
+            for cnt in s1:
+                temp_s = []
+                for i in range(window_size):
+                    if i == cnt:
+                        temp_s.append(1)
+                    else:
+                        temp_s.append(0)
+                streak_1.append(temp_s)
             # print(self.data[pid])
             # print(eff)
             # print(p_eff)
@@ -473,8 +501,9 @@ class Streaks:
             y_list += eff
             pre_list += p_eff
             his_list += l_eff
-            str_list += streak
-        x_vec = np.column_stack((t_list, pre_list, his_list, str_list))
+            str_0_list += streak_0
+            str_1_list += streak_1
+        x_vec = np.column_stack((t_list, pre_list, his_list, str_1_list, str_0_list))
         x_vec = sm.add_constant(x_vec)
         # ols
         model = sm.OLS(np.array(y_list), x_vec)

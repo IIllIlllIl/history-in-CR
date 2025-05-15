@@ -34,7 +34,7 @@ class CsvReader:
             for [k, v] in na_pid.items():
                 if v >= threshold:
                     pid_list.append(k)
-            print(pid_list)
+            print(f"removed pid: {pid_list}")
             for row in self.selected_data:
                 if row["PID"] in pid_list and 'N/A' not in row.values():
                     remove_list.append(row)

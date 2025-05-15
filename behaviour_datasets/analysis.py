@@ -10,7 +10,7 @@ st = data.Streaks(dt.acceptance())
 
 # linear model
 # a.ols_regression()
-a.entire_ols_result()
+# a.entire_ols_result()
 
 # anova
 # st.one_previous_anova()
@@ -19,8 +19,8 @@ a.entire_ols_result()
 # st.two_previous_anova_each()
 
 # chi2
-st.phi_contingency()
-st.two_previous_chi2()
+# st.phi_contingency()
+# st.two_previous_chi2()
 
 # OLS streak
 st.entire_ols_result()

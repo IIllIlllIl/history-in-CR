@@ -2,7 +2,7 @@ import numpy as np
 from scipy import stats
 
 
-observed = np.array([[52, 225, 47], [230, 930, 207], [43, 216, 129]])
+observed = np.array([[45, 212], [206, 850]])
 print(observed)
 chi2, p, dof, expected = stats.chi2_contingency(observed)
 
