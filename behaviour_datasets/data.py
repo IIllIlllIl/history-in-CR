@@ -475,7 +475,7 @@ class Streaks:
             t_list += t
             # differentiate streak for rejecting
             streak_0 = []
-            for cnt in s1:
+            for cnt in s0:
                 temp_s = []
                 for i in range(window_size):
                     if i == cnt:
@@ -512,5 +512,5 @@ class Streaks:
         coefficients = results.params[1:]
         p_values = results.pvalues[1:]
         for coef, p in zip(coefficients, p_values):
-            print(f"coef: , {coef:.5f}, \tp_value:  , {p:.6f}")
+            print(f"coef: {coef:.5f}   \tp_value: {p:.6f}")
         return [coefficients, p_values]
