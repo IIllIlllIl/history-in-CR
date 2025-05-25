@@ -7,8 +7,10 @@ st = data.Streaks(dt.acceptance())
 
 # trend
 # a.slt_decomposition()
-a.anova_sum_of_group()
-a.repeated_measures_anova()
+# a.anova_sum_of_group()
+# a.kruskal_sum_of_group()
+a.friedman_sum_of_group()
+# a.repeated_measures_anova()
 
 # linear model
 # a.ols_regression()

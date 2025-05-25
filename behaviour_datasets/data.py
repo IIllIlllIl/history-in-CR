@@ -87,12 +87,41 @@ class Analysis:
                 eff_group.append(eff_sum)
         return eff_group
 
+    @staticmethod
+    def normal_check_group(groups):
+        for period in groups:
+            stat, p = stats.shapiro(period)
+            print(f"p = {p:.4f}")
+
     def anova_sum_of_group(self):
         eff_participant = np.array(self.get_sum_of_each_groups())
         eff_time = eff_participant.T
+        self.normal_check_group(eff_time)
         # print(eff_time)
         f_stat, p_value = stats.f_oneway(eff_time[0], eff_time[1], eff_time[2], eff_time[3])
-        print(f"F: {f_stat:.3f}, p: {p_value:.4f}")
+        print(f"F: {f_stat:.6f}, p: {p_value:.6f}")
+
+    def kruskal_sum_of_group(self):
+        eff_participant = np.array(self.get_sum_of_each_groups())
+        eff_time = eff_participant.T
+        self.normal_check_group(eff_time)
+        # print(eff_time)
+        f_stat, p_value = stats.kruskal(eff_time[0], eff_time[1], eff_time[2], eff_time[3])
+        print(f"F: {f_stat:.6f}, p: {p_value:.6f}")
+
+    def friedman_sum_of_group(self):
+        eff_participant = np.array(self.get_sum_of_each_groups())
+        eff_time = eff_participant.T
+        self.normal_check_group(eff_time)
+        # print(eff_time)
+        stat, p_value = stats.friedmanchisquare(eff_time[0], eff_time[1], eff_time[2], eff_time[3])
+        print(f"F: {stat:.6f}, p: {p_value:.6f}")
+
+        # 效应量计算 (Kendall's W)
+        n_subjects = len(eff_time[0])
+        k = 4  # 时间点数
+        w = stat / (n_subjects * (k - 1))
+        print(f"Kendall's W: {w:.3f}")
 
     def repeated_measures_anova(self):
         eff_participant = self.get_sum_of_each_groups()
