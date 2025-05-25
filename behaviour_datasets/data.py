@@ -5,6 +5,8 @@ import statsmodels.api as sm
 import numpy as np
 import ruptures as rpt
 import matplotlib.pyplot as plt
+import pandas as pd
+import pingouin as pg
 
 
 class Data:
@@ -67,6 +69,52 @@ class Analysis:
             for time in row:
                 temp_eff.append(1 / time)
             self.eff.append(temp_eff)
+
+    def get_sum_of_each_groups(self):
+        eff_group = []
+        for row in self.data:
+            eff_sum = [0, 0, 0, 0]
+            if len(row) == 60:
+                for i in range(60):
+                    if i < 15:
+                        eff_sum[0] += row[i] / 15
+                    elif i < 30:
+                        eff_sum[1] += row[i] / 15
+                    elif i < 45:
+                        eff_sum[2] += row[i] / 15
+                    else:
+                        eff_sum[3] += row[i] / 15
+                eff_group.append(eff_sum)
+        return eff_group
+
+    def anova_sum_of_group(self):
+        eff_participant = np.array(self.get_sum_of_each_groups())
+        eff_time = eff_participant.T
+        # print(eff_time)
+        f_stat, p_value = stats.f_oneway(eff_time[0], eff_time[1], eff_time[2], eff_time[3])
+        print(f"F: {f_stat:.3f}, p: {p_value:.4f}")
+
+    def repeated_measures_anova(self):
+        eff_participant = self.get_sum_of_each_groups()
+        participant = len(eff_participant)
+        pid = [int(i / 4) for i in range(participant * 4)]
+        period = [0, 1, 2, 3] * participant
+        efficiency = []
+        for p in eff_participant:
+            efficiency += p
+        data = pd.DataFrame({
+            'Subject': pid,
+            'Time': period,  # 3个时间点
+            'Score': efficiency
+        })
+        rm_anova = pg.rm_anova(
+            data=data,
+            dv='Score',  # 因变量
+            within='Time',  # 时间/条件变量
+            subject='Subject',  # 受试者ID列
+            detailed=True  # 输出详细信息
+        )
+        print(rm_anova)
 
     def check_normality(self, alpha=0.05):
         cnt_y = 0
